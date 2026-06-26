@@ -87,7 +87,12 @@
   <div class="modalFoot"><button type="button" class="btn danger" id="deleteTask">Delete</button><button class="btn primary" value="save">Save Task</button></div>
 </form></dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL='https://jsytczubaoexcaktybcw.supabase.co';
+const SUPABASE_KEY='sb_publishable_uZChiFfCMk_FvihGfgh7TA_9S3ad6CM';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 const seedEvents=[
 {id:'e1',name:'Salsation Cruise 2027',start:'2027-06-01',end:'2027-06-08',type:'Cruise',country:'Mediterranean',city:'Costa Cruise',status:'confirmed',owner:'Marketing',notes:'Main yearly community event.'},
 {id:'e2',name:'Blast Poland',start:'2026-09-26',end:'2026-09-27',type:'Blast',country:'Poland',city:'Warsaw',status:'confirmed',owner:'Events',notes:'Major European Blast.'},
@@ -101,12 +106,30 @@ const seedTasks=[
 {id:'t2',title:'Confirm Blast Poland presenter poster',eventId:'e2',due:'2026-07-20',status:'In progress',priority:'High',owner:'Marketing'},
 {id:'t3',title:'Draft Malaysia email sequence',eventId:'e3',due:'2026-08-25',status:'To do',priority:'Medium',owner:'Marketing'}
 ];
-let events=JSON.parse(localStorage.getItem('sec_events')||'null')||seedEvents;
-let tasks=JSON.parse(localStorage.getItem('sec_tasks')||'null')||seedTasks;
+
+let events=[],tasks=[];
 let isAdmin=false,currentView='annual',calendarDate=new Date(2026,0,1),editingEventId=null,editingTaskId=null;
 const $=id=>document.getElementById(id);
 const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
-function save(){localStorage.setItem('sec_events',JSON.stringify(events));localStorage.setItem('sec_tasks',JSON.stringify(tasks));}
+
+function toDbEvent(e){return{id:e.id,name:e.name,start_date:e.start||null,end_date:e.end||null,type:e.type||null,country:e.country||null,city:e.city||null,status:e.status||'draft',owner:e.owner||null,notes:e.notes||null};}
+function fromDbEvent(r){return{id:r.id,name:r.name,start:r.start_date||'',end:r.end_date||'',type:r.type||'',country:r.country||'',city:r.city||'',status:r.status||'draft',owner:r.owner||'',notes:r.notes||''};}
+function toDbTask(t){return{id:t.id,title:t.title,event_id:t.eventId||null,due:t.due||null,status:t.status||'To do',priority:t.priority||'Medium',owner:t.owner||null};}
+function fromDbTask(r){return{id:r.id,title:r.title,eventId:r.event_id||'',due:r.due||'',status:r.status||'To do',priority:r.priority||'Medium',owner:r.owner||''};}
+
+async function loadData(){
+  const[evRes,tRes]=await Promise.all([db.from('events').select('*'),db.from('tasks').select('*')]);
+  if(evRes.error||tRes.error){console.error(evRes.error||tRes.error);return;}
+  if(evRes.data.length===0){
+    await db.from('events').insert(seedEvents.map(toDbEvent));
+    await db.from('tasks').insert(seedTasks.map(toDbTask));
+    events=[...seedEvents];tasks=[...seedTasks];
+  }else{
+    events=evRes.data.map(fromDbEvent);tasks=tRes.data.map(fromDbTask);
+  }
+  renderAll();
+}
+
 function parseDate(s){return s?new Date(s+'T00:00:00'):null}
 function fmt(s){const d=parseDate(s);return d?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'}
 function getFiltered(){const q=$('search').value.toLowerCase();const type=$('typeFilter').value;const status=$('statusFilter').value;const country=$('countryFilter').value;return events.filter(e=>(!q||[e.name,e.country,e.city,e.type,e.owner].join(' ').toLowerCase().includes(q))&&(type==='all'||e.type===type)&&(status==='all'||e.status===status)&&(country==='all'||e.country===country)).sort((a,b)=>a.start.localeCompare(b.start));}
@@ -123,12 +146,49 @@ function renderAll(){renderFilters();renderStats();renderAnnual();renderList();r
 function openEvent(id){editingEventId=id||null;const f=$('eventForm');f.reset();$('deleteEvent').style.display=id?'inline-block':'none';$('eventModalTitle').textContent=id?'Edit Event':'New Event';if(id){const e=events.find(x=>x.id===id);Object.keys(e).forEach(k=>{if(f.elements[k])f.elements[k].value=e[k]||''});}$('eventDialog').showModal();}
 function openTask(id){editingTaskId=id||null;const f=$('taskForm');f.reset();$('deleteTask').style.display=id?'inline-block':'none';$('taskModalTitle').textContent=id?'Edit Task':'New Task';$('taskEventSelect').innerHTML=events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');if(id){const t=tasks.find(x=>x.id===id);Object.keys(t).forEach(k=>{if(f.elements[k])f.elements[k].value=t[k]||''});}$('taskDialog').showModal();}
 window.openEvent=openEvent;window.openTask=openTask;
-$('eventForm').addEventListener('submit',e=>{const f=e.target,data=Object.fromEntries(new FormData(f).entries());if(!data.end)data.end='';if(editingEventId){events=events.map(ev=>ev.id===editingEventId?{...ev,...data}:ev)}else{events.push({id:'e'+Date.now(),...data})}save();renderAll();});
-$('taskForm').addEventListener('submit',e=>{const f=e.target,data=Object.fromEntries(new FormData(f).entries());if(editingTaskId){tasks=tasks.map(t=>t.id===editingTaskId?{...t,...data}:t)}else{tasks.push({id:'t'+Date.now(),...data})}save();renderAll();});
-$('deleteEvent').onclick=()=>{if(editingEventId&&confirm('Delete this event?')){events=events.filter(e=>e.id!==editingEventId);tasks=tasks.filter(t=>t.eventId!==editingEventId);save();$('eventDialog').close();renderAll();}};
-$('deleteTask').onclick=()=>{if(editingTaskId&&confirm('Delete this task?')){tasks=tasks.filter(t=>t.id!==editingTaskId);save();$('taskDialog').close();renderAll();}};
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setView(b.dataset.view));['search','typeFilter','statusFilter','countryFilter'].forEach(id=>$(id).addEventListener('input',renderAll));$('toggleAdmin').onclick=()=>{isAdmin=!isAdmin;applyRole();renderAll();};$('newEvent').onclick=()=>openEvent();$('newTask').onclick=()=>openTask();$('resetData').onclick=()=>{if(confirm('Reset to demo data?')){events=seedEvents;tasks=seedTasks;save();renderAll();}};$('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};$('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
-renderAll();
+
+$('eventForm').addEventListener('submit',async e=>{
+  const data=Object.fromEntries(new FormData(e.target).entries());
+  if(!data.end)data.end='';
+  if(editingEventId){
+    const updated={...events.find(x=>x.id===editingEventId),...data};
+    await db.from('events').update(toDbEvent(updated)).eq('id',editingEventId);
+    events=events.map(ev=>ev.id===editingEventId?updated:ev);
+  }else{
+    const newEv={id:'e'+Date.now(),...data};
+    await db.from('events').insert(toDbEvent(newEv));
+    events.push(newEv);
+  }
+  renderAll();
+});
+
+$('taskForm').addEventListener('submit',async e=>{
+  const data=Object.fromEntries(new FormData(e.target).entries());
+  if(editingTaskId){
+    const updated={...tasks.find(x=>x.id===editingTaskId),...data};
+    await db.from('tasks').update(toDbTask(updated)).eq('id',editingTaskId);
+    tasks=tasks.map(t=>t.id===editingTaskId?updated:t);
+  }else{
+    const newT={id:'t'+Date.now(),...data};
+    await db.from('tasks').insert(toDbTask(newT));
+    tasks.push(newT);
+  }
+  renderAll();
+});
+
+$('deleteEvent').onclick=async()=>{if(editingEventId&&confirm('Delete this event?')){await db.from('events').delete().eq('id',editingEventId);events=events.filter(e=>e.id!==editingEventId);tasks=tasks.filter(t=>t.eventId!==editingEventId);$('eventDialog').close();renderAll();}};
+$('deleteTask').onclick=async()=>{if(editingTaskId&&confirm('Delete this task?')){await db.from('tasks').delete().eq('id',editingTaskId);tasks=tasks.filter(t=>t.id!==editingTaskId);$('taskDialog').close();renderAll();}};
+
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+['search','typeFilter','statusFilter','countryFilter'].forEach(id=>$(id).addEventListener('input',renderAll));
+$('toggleAdmin').onclick=()=>{isAdmin=!isAdmin;applyRole();renderAll();};
+$('newEvent').onclick=()=>openEvent();
+$('newTask').onclick=()=>openTask();
+$('resetData').onclick=async()=>{if(confirm('Reset to demo data?')){await db.from('tasks').delete().neq('id','');await db.from('events').delete().neq('id','');await db.from('events').insert(seedEvents.map(toDbEvent));await db.from('tasks').insert(seedTasks.map(toDbTask));events=[...seedEvents];tasks=[...seedTasks];renderAll();}};
+$('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};
+$('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
+
+loadData();
 </script>
 </body>
 </html>
