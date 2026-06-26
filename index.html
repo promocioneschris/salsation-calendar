@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Salsation Event Center MVP</title>
+<style>
+:root{--bg:#f6f3ed;--card:#fff;--ink:#1f1f1f;--muted:#77716a;--line:#e7dfd3;--accent:#cb5f42;--dark:#171717;--green:#63856a;--yellow:#b98a24;--red:#a94c4c;--blue:#587ba5;--shadow:0 16px 40px rgba(28,22,15,.08);--radius:18px}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}aside{background:var(--dark);color:white;padding:26px 20px;position:sticky;top:0;height:100vh}.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.logo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f4ded5,#cb5f42);display:grid;place-items:center;color:#171717;font-weight:900}.brand h1{font-size:16px;line-height:1.1;margin:0}.brand span{font-size:12px;color:#aaa;font-weight:400}nav button,.ghostBtn{width:100%;border:0;background:transparent;color:#cacaca;text-align:left;padding:13px 14px;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:6px}nav button.active,nav button:hover{background:rgba(255,255,255,.09);color:white}.side-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:15px;margin-top:24px}.side-card p{font-size:12px;color:#bdbdbd;line-height:1.45;margin:8px 0 0}main{padding:28px}header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.title h2{margin:0;font-size:30px;letter-spacing:-.04em}.title p{margin:8px 0 0;color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid var(--line);background:#fff;padding:11px 14px;border-radius:12px;cursor:pointer;font-weight:700;color:var(--ink)}.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}.btn.dark{background:#1f1f1f;color:white;border-color:#1f1f1f}.btn.danger{background:#fff;color:var(--red);border-color:#dfb8b8}.btn:disabled{opacity:.45;cursor:not-allowed}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.filters input,.filters select,dialog input,dialog select,dialog textarea{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;font:inherit;min-height:42px}.filters input{min-width:250px}.grid{display:grid;gap:18px}.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}.stat .num{font-size:28px;font-weight:900}.stat .label{font-size:12px;color:var(--muted);margin-top:4px}.hidden{display:none!important}.section-title{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}.section-title h3{margin:0;font-size:18px}.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;border-radius:999px;padding:6px 9px;border:1px solid var(--line);background:#faf8f4}.confirmed{background:#edf5ef;color:var(--green);border-color:#c9dfcf}.draft{background:#fbf1de;color:var(--yellow);border-color:#ead4a8}.eventGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.eventCard{border:1px solid var(--line);border-radius:16px;background:#fff;padding:16px}.eventCard h4{margin:8px 0 5px;font-size:16px}.meta{color:var(--muted);font-size:13px;line-height:1.5}.tag{display:inline-block;padding:5px 8px;border-radius:999px;background:#f3eee5;font-size:11px;font-weight:800;margin-right:5px}.eventActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.months{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.month h3{margin:0 0 12px;font-size:17px}.monthEvent{border-left:4px solid var(--accent);padding:10px 0 10px 12px;margin:8px 0;background:#fff;border-radius:0 12px 12px 0}.monthEvent strong{display:block;font-size:14px}.monthEvent span{font-size:12px;color:var(--muted)}.empty{color:#aaa;font-size:13px;padding:14px;border:1px dashed var(--line);border-radius:12px}.table{width:100%;border-collapse:separate;border-spacing:0 10px}.table th{text-align:left;color:var(--muted);font-size:12px;padding:0 12px}.table td{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 12px;font-size:14px}.table td:first-child{border-left:1px solid var(--line);border-radius:12px 0 0 12px}.table td:last-child{border-right:1px solid var(--line);border-radius:0 12px 12px 0}.calendarTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.calendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.dayName{font-size:12px;color:var(--muted);font-weight:800;text-align:center}.day{min-height:120px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px}.day.muted{opacity:.38}.dayNum{font-size:12px;color:var(--muted);font-weight:900}.calEvent{margin-top:7px;padding:7px;border-radius:10px;background:#f3eee5;font-size:11px;font-weight:800}.taskItem{display:grid;grid-template-columns:1fr 120px 120px auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}dialog{border:0;border-radius:20px;box-shadow:0 30px 100px rgba(0,0,0,.28);width:min(720px,92vw);padding:0}dialog::backdrop{background:rgba(0,0,0,.35)}.modalHead{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}.modalHead h3{margin:0}.modalBody{padding:20px}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.formGrid label{font-size:12px;color:var(--muted);font-weight:800;display:grid;gap:7px}.full{grid-column:1/-1}.modalFoot{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--line)}@media(max-width:950px){.app{grid-template-columns:1fr}aside{position:relative;height:auto}.stats,.eventGrid,.months{grid-template-columns:1fr}.calendarGrid{gap:5px}.day{min-height:90px}.taskItem{grid-template-columns:1fr}header{display:block}.actions{justify-content:flex-start;margin-top:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand"><div class="logo">S</div><div><h1>Salsation<br>Event Center</h1><span>MVP Calendar + Admin Tasks</span></div></div>
+  <nav>
+    <button class="nav active" data-view="annual">Year View</button>
+    <button class="nav" data-view="calendar">Monthly Calendar</button>
+    <button class="nav" data-view="list">Event List</button>
+    <button class="nav adminOnly" data-view="tasks">Admin Tasks</button>
+  </nav>
+  <div class="side-card"><strong id="roleLabel">Team View</strong><p>Team members can view the calendar/list and add events. Admin mode unlocks editing, deleting and private tasks.</p></div>
+</aside>
+<main>
+<header>
+  <div class="title"><h2 id="pageTitle">Year View</h2><p id="pageSubtitle">All events grouped by month, with name, date, type and confirmation status.</p></div>
+  <div class="actions"><button class="btn" id="toggleAdmin">Enter Admin View</button><button class="btn primary" id="newEvent">+ New Event</button><button class="btn adminOnly" id="resetData">Reset Demo Data</button></div>
+</header>
+
+<section class="grid stats">
+  <div class="card stat"><div class="num" id="statEvents">0</div><div class="label">Events</div></div>
+  <div class="card stat"><div class="num" id="statConfirmed">0</div><div class="label">Confirmed</div></div>
+  <div class="card stat"><div class="num" id="statDraft">0</div><div class="label">Not confirmed</div></div>
+  <div class="card stat adminOnly"><div class="num" id="statTasks">0</div><div class="label">Admin tasks</div></div>
+</section>
+
+<section class="filters">
+  <input id="search" placeholder="Search event, country, city..." />
+  <select id="typeFilter"><option value="all">All types</option></select>
+  <select id="statusFilter"><option value="all">All status</option><option value="confirmed">Confirmed</option><option value="draft">Not confirmed</option></select>
+  <select id="countryFilter"><option value="all">All countries</option></select>
+</section>
+
+<section id="annualView" class="view"><div class="months" id="months"></div></section>
+
+<section id="calendarView" class="view hidden card">
+  <div class="calendarTop"><button class="btn" id="prevMonth">←</button><h3 id="monthTitle"></h3><button class="btn" id="nextMonth">→</button></div>
+  <div class="calendarGrid" id="calendar"></div>
+</section>
+
+<section id="listView" class="view hidden card">
+  <table class="table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Location</th><th>Status</th><th class="adminOnly">Admin</th></tr></thead><tbody id="eventTable"></tbody></table>
+</section>
+
+<section id="tasksView" class="view hidden card adminOnly">
+  <div class="section-title"><h3>Admin Tasks</h3><button class="btn primary" id="newTask">+ New Task</button></div>
+  <div id="taskList"></div>
+</section>
+</main>
+</div>
+
+<dialog id="eventDialog"><form method="dialog" id="eventForm">
+  <div class="modalHead"><h3 id="eventModalTitle">New Event</h3><button class="btn" value="cancel">Close</button></div>
+  <div class="modalBody"><div class="formGrid">
+    <label class="full">Event name<input name="name" required></label>
+    <label>Start date<input name="start" type="date" required></label>
+    <label>End date<input name="end" type="date"></label>
+    <label>Type<input name="type" placeholder="Cruise, Blast, Workshop..."></label>
+    <label>Country<input name="country"></label>
+    <label>City / Online<input name="city"></label>
+    <label>Status<select name="status"><option value="confirmed">Confirmed</option><option value="draft">Not confirmed</option></select></label>
+    <label>Owner<input name="owner"></label>
+    <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
+  </div></div>
+  <div class="modalFoot"><button type="button" class="btn danger" id="deleteEvent">Delete</button><button class="btn primary" value="save">Save Event</button></div>
+</form></dialog>
+
+<dialog id="taskDialog"><form method="dialog" id="taskForm">
+  <div class="modalHead"><h3 id="taskModalTitle">New Task</h3><button class="btn" value="cancel">Close</button></div>
+  <div class="modalBody"><div class="formGrid">
+    <label class="full">Task title<input name="title" required></label>
+    <label class="full">Linked event<select name="eventId" id="taskEventSelect"></select></label>
+    <label>Due date<input name="due" type="date"></label>
+    <label>Status<select name="status"><option>To do</option><option>In progress</option><option>Done</option></select></label>
+    <label>Priority<select name="priority"><option>Low</option><option>Medium</option><option>High</option></select></label>
+    <label>Owner<input name="owner"></label>
+  </div></div>
+  <div class="modalFoot"><button type="button" class="btn danger" id="deleteTask">Delete</button><button class="btn primary" value="save">Save Task</button></div>
+</form></dialog>
+
+<script>
+const seedEvents=[
+{id:'e1',name:'Salsation Cruise 2027',start:'2027-06-01',end:'2027-06-08',type:'Cruise',country:'Mediterranean',city:'Costa Cruise',status:'confirmed',owner:'Marketing',notes:'Main yearly community event.'},
+{id:'e2',name:'Blast Poland',start:'2026-09-26',end:'2026-09-27',type:'Blast',country:'Poland',city:'Warsaw',status:'confirmed',owner:'Events',notes:'Major European Blast.'},
+{id:'e3',name:'Blast Malaysia',start:'2026-11-14',end:'2026-11-15',type:'Blast',country:'Malaysia',city:'Kuala Lumpur',status:'confirmed',owner:'Events',notes:'Asia regional Blast.'},
+{id:'e4',name:'Instructor Training Online',start:'2026-05-03',end:'2026-05-04',type:'Training',country:'Online',city:'Online',status:'draft',owner:'Education',notes:'Online Instructor Training.'},
+{id:'e5',name:'Wear Collection Launch',start:'2026-03-20',end:'',type:'Wear Launch',country:'Global',city:'Online',status:'draft',owner:'Wear',notes:'Collection release.'},
+{id:'e6',name:'Trouper Coaching Session',start:'2026-02-09',end:'',type:'Community',country:'Global',city:'Online',status:'confirmed',owner:'Community',notes:'Monthly coaching session.'}
+];
+const seedTasks=[
+{id:'t1',title:'Prepare Cruise announcement assets',eventId:'e1',due:'2026-08-15',status:'To do',priority:'High',owner:'Design'},
+{id:'t2',title:'Confirm Blast Poland presenter poster',eventId:'e2',due:'2026-07-20',status:'In progress',priority:'High',owner:'Marketing'},
+{id:'t3',title:'Draft Malaysia email sequence',eventId:'e3',due:'2026-08-25',status:'To do',priority:'Medium',owner:'Marketing'}
+];
+let events=JSON.parse(localStorage.getItem('sec_events')||'null')||seedEvents;
+let tasks=JSON.parse(localStorage.getItem('sec_tasks')||'null')||seedTasks;
+let isAdmin=false,currentView='annual',calendarDate=new Date(2026,0,1),editingEventId=null,editingTaskId=null;
+const $=id=>document.getElementById(id);
+const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function save(){localStorage.setItem('sec_events',JSON.stringify(events));localStorage.setItem('sec_tasks',JSON.stringify(tasks));}
+function parseDate(s){return s?new Date(s+'T00:00:00'):null}
+function fmt(s){const d=parseDate(s);return d?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'}
+function getFiltered(){const q=$('search').value.toLowerCase();const type=$('typeFilter').value;const status=$('statusFilter').value;const country=$('countryFilter').value;return events.filter(e=>(!q||[e.name,e.country,e.city,e.type,e.owner].join(' ').toLowerCase().includes(q))&&(type==='all'||e.type===type)&&(status==='all'||e.status===status)&&(country==='all'||e.country===country)).sort((a,b)=>a.start.localeCompare(b.start));}
+function badge(status){return `<span class="pill ${status==='confirmed'?'confirmed':'draft'}">${status==='confirmed'?'Confirmed':'Not confirmed'}</span>`}
+function renderFilters(){const types=[...new Set(events.map(e=>e.type).filter(Boolean))].sort();const countries=[...new Set(events.map(e=>e.country).filter(Boolean))].sort();const typeVal=$('typeFilter').value,countryVal=$('countryFilter').value;$('typeFilter').innerHTML='<option value="all">All types</option>'+types.map(t=>`<option>${t}</option>`).join('');$('countryFilter').innerHTML='<option value="all">All countries</option>'+countries.map(c=>`<option>${c}</option>`).join('');$('typeFilter').value=types.includes(typeVal)?typeVal:'all';$('countryFilter').value=countries.includes(countryVal)?countryVal:'all';}
+function renderStats(){const filtered=getFiltered();$('statEvents').textContent=filtered.length;$('statConfirmed').textContent=filtered.filter(e=>e.status==='confirmed').length;$('statDraft').textContent=filtered.filter(e=>e.status==='draft').length;$('statTasks').textContent=tasks.length;}
+function renderAnnual(){const filtered=getFiltered();const byMonth=Array.from({length:12},()=>[]);filtered.forEach(e=>{const d=parseDate(e.start);if(d)byMonth[d.getMonth()].push(e)});$('months').innerHTML=monthNames.map((m,i)=>`<div class="card month"><h3>${m}</h3>${byMonth[i].length?byMonth[i].map(e=>`<div class="monthEvent"><strong>${e.name}</strong><span>${fmt(e.start)}${e.end?' – '+fmt(e.end):''} · ${e.type} · ${badge(e.status)}</span>${isAdmin?`<div class="eventActions"><button class="btn" onclick="openEvent('${e.id}')">Edit</button></div>`:''}</div>`).join(''):'<div class="empty">No events</div>'}</div>`).join('');}
+function renderList(){const rows=getFiltered().map(e=>`<tr><td>${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</td><td><strong>${e.name}</strong><div class="meta">${e.notes||''}</div></td><td>${e.type}</td><td>${e.city}, ${e.country}</td><td>${badge(e.status)}</td><td class="adminOnly"><button class="btn" onclick="openEvent('${e.id}')">Edit</button></td></tr>`).join('');$('eventTable').innerHTML=rows||'<tr><td colspan="6">No events found.</td></tr>';}
+function renderCalendar(){const y=calendarDate.getFullYear(),m=calendarDate.getMonth();$('monthTitle').textContent=`${monthNames[m]} ${y}`;const first=new Date(y,m,1),start=new Date(first);start.setDate(first.getDate()-((first.getDay()+6)%7));let html=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="dayName">${d}</div>`).join('');const filtered=getFiltered();for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const iso=d.toISOString().slice(0,10);const dayEvents=filtered.filter(e=>e.start===iso);html+=`<div class="day ${d.getMonth()!==m?'muted':''}"><div class="dayNum">${d.getDate()}</div>${dayEvents.map(e=>`<div class="calEvent">${e.name}<br>${badge(e.status)}</div>`).join('')}</div>`}$('calendar').innerHTML=html;}
+function renderTasks(){const html=tasks.sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')).map(t=>{const ev=events.find(e=>e.id===t.eventId);return `<div class="taskItem"><div><strong>${t.title}</strong><div class="meta">${ev?ev.name:'No event'} · Owner: ${t.owner||'—'}</div></div><div>${fmt(t.due)}</div><div><span class="tag">${t.status}</span> <span class="tag">${t.priority}</span></div><button class="btn" onclick="openTask('${t.id}')">Edit</button></div>`}).join('');$('taskList').innerHTML=html||'<div class="empty">No admin tasks yet.</div>';}
+function applyRole(){document.querySelectorAll('.adminOnly').forEach(el=>el.classList.toggle('hidden',!isAdmin));$('toggleAdmin').textContent=isAdmin?'Exit Admin View':'Enter Admin View';$('roleLabel').textContent=isAdmin?'Admin View':'Team View';if(!isAdmin&&currentView==='tasks')setView('annual');}
+function setView(view){currentView=view;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));$(view+'View').classList.remove('hidden');const titles={annual:['Year View','All events grouped by month, with name, date, type and confirmation status.'],calendar:['Monthly Calendar','Month by month visual calendar.'],list:['Event List','Filter and review events in table format.'],tasks:['Admin Tasks','Private task viewer and editor for admin.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];renderAll();}
+function renderAll(){renderFilters();renderStats();renderAnnual();renderList();renderCalendar();renderTasks();applyRole();}
+function openEvent(id){editingEventId=id||null;const f=$('eventForm');f.reset();$('deleteEvent').style.display=id?'inline-block':'none';$('eventModalTitle').textContent=id?'Edit Event':'New Event';if(id){const e=events.find(x=>x.id===id);Object.keys(e).forEach(k=>{if(f.elements[k])f.elements[k].value=e[k]||''});}$('eventDialog').showModal();}
+function openTask(id){editingTaskId=id||null;const f=$('taskForm');f.reset();$('deleteTask').style.display=id?'inline-block':'none';$('taskModalTitle').textContent=id?'Edit Task':'New Task';$('taskEventSelect').innerHTML=events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');if(id){const t=tasks.find(x=>x.id===id);Object.keys(t).forEach(k=>{if(f.elements[k])f.elements[k].value=t[k]||''});}$('taskDialog').showModal();}
+window.openEvent=openEvent;window.openTask=openTask;
+$('eventForm').addEventListener('submit',e=>{const f=e.target,data=Object.fromEntries(new FormData(f).entries());if(!data.end)data.end='';if(editingEventId){events=events.map(ev=>ev.id===editingEventId?{...ev,...data}:ev)}else{events.push({id:'e'+Date.now(),...data})}save();renderAll();});
+$('taskForm').addEventListener('submit',e=>{const f=e.target,data=Object.fromEntries(new FormData(f).entries());if(editingTaskId){tasks=tasks.map(t=>t.id===editingTaskId?{...t,...data}:t)}else{tasks.push({id:'t'+Date.now(),...data})}save();renderAll();});
+$('deleteEvent').onclick=()=>{if(editingEventId&&confirm('Delete this event?')){events=events.filter(e=>e.id!==editingEventId);tasks=tasks.filter(t=>t.eventId!==editingEventId);save();$('eventDialog').close();renderAll();}};
+$('deleteTask').onclick=()=>{if(editingTaskId&&confirm('Delete this task?')){tasks=tasks.filter(t=>t.id!==editingTaskId);save();$('taskDialog').close();renderAll();}};
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setView(b.dataset.view));['search','typeFilter','statusFilter','countryFilter'].forEach(id=>$(id).addEventListener('input',renderAll));$('toggleAdmin').onclick=()=>{isAdmin=!isAdmin;applyRole();renderAll();};$('newEvent').onclick=()=>openEvent();$('newTask').onclick=()=>openTask();$('resetData').onclick=()=>{if(confirm('Reset to demo data?')){events=seedEvents;tasks=seedTasks;save();renderAll();}};$('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};$('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
+renderAll();
+</script>
+</body>
+</html>
