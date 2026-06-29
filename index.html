@@ -45,6 +45,11 @@ header{display:flex;justify-content:space-between;gap:18px;align-items:flex-star
 .month h3{margin:0 0 12px;font-size:17px}
 .monthEvent{border-left:4px solid var(--accent);padding:10px 0 10px 12px;margin:8px 0;background:#fff;border-radius:0 12px 12px 0;cursor:pointer;transition:background .15s}
 .monthEvent:hover{background:#f5f2ed}
+.holidayBanner{background:linear-gradient(135deg,#f5eeff,#ede0ff);border:1px solid #d4b8f5;border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;cursor:default}
+.holidayIcon{font-size:22px;flex-shrink:0;line-height:1}
+.holidayLabel{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#7c3aed;margin-bottom:4px}
+.holidayName{font-size:13px;font-weight:700;color:#5b21b6;cursor:pointer;padding:2px 0}
+.holidayName:hover{text-decoration:underline}
 .monthEvent.holiday{background:linear-gradient(to right,#fdf6ff,#fff)}
 .monthEvent strong{display:block;font-size:14px;margin-bottom:4px}
 .monthEvent .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px;align-items:center}
@@ -344,21 +349,34 @@ function renderAnnual(){
   const filtered=getFiltered().filter(e=>{const d=parseDate(e.start);return d&&d.getFullYear()===annualYear;});
   const byMonth=Array.from({length:12},()=>[]);
   filtered.forEach(e=>{const d=parseDate(e.start);if(d)byMonth[d.getMonth()].push(e);});
-  $('months').innerHTML=monthNames.map((m,i)=>`
-    <div class="card month">
+  $('months').innerHTML=monthNames.map((m,i)=>{
+    const holidays=byMonth[i].filter(e=>isHoliday(e.type));
+    const regular=byMonth[i].filter(e=>!isHoliday(e.type));
+    const holidayBanner=holidays.length?`
+      <div class="holidayBanner">
+        <span class="holidayIcon">🎉</span>
+        <div>
+          <div class="holidayLabel">Holidays this month</div>
+          ${holidays.map(e=>`<div class="holidayName" onclick="openEvent('${e.id}')">${e.name} <span style="opacity:.7;font-size:11px">${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</span></div>`).join('')}
+        </div>
+      </div>`:'';
+    const eventList=regular.length?regular.map(e=>`
+      <div class="monthEvent" style="border-left-color:${typeColor(e.type)}" onclick="openEvent('${e.id}')">
+        <strong>${e.name}</strong>
+        <div class="meta">
+          <span>${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</span>
+          ${typeTag(e.type)}
+          ${badge(e.status)}
+          ${onlineIcon(e)}
+          ${commentCount(e.id)}
+        </div>
+      </div>`).join(''):'';
+    return`<div class="card month">
       <h3>${m}</h3>
-      ${byMonth[i].length?byMonth[i].map(e=>`
-        <div class="monthEvent${isHoliday(e.type)?' holiday':''}" style="border-left-color:${typeColor(e.type)}" onclick="openEvent('${e.id}')">
-          <strong>${e.name}</strong>
-          <div class="meta">
-            <span>${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</span>
-            ${typeTag(e.type)}
-            ${badge(e.status)}
-            ${onlineIcon(e)}
-            ${commentCount(e.id)}
-          </div>
-        </div>`).join(''):'<div class="empty">No events</div>'}
-    </div>`).join('');
+      ${holidayBanner}
+      ${eventList||(!holidays.length?'<div class="empty">No events</div>':'')}
+    </div>`;
+  }).join('');
 }
 
 function renderList(){
