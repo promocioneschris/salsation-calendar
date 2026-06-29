@@ -368,7 +368,7 @@ function renderAnnual(){
         <div class="chIcon">🎉</div>
         <div class="chText">
           <div class="chTitle">${monthNames[curMonth]} — Holidays this month</div>
-          <div class="chNames">${curHolidays.map(e=>`${e.name} <span style="opacity:.75;font-weight:400;font-size:13px">${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</span>`).join(' · ')}</div>
+          ${curHolidays.map(e=>`<div class="chNames">${e.name}</div><div style="font-size:16px;font-weight:900;opacity:.95;margin-top:2px">${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</div>`).join('')}
         </div>
       </div>`;
     }
