@@ -145,7 +145,6 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="card stat adminOnly"><div class="num" id="statTasks">0</div><div class="label">Admin tasks</div></div>
 </section>
 
-<div id="dbgMsg" style="background:#fff3cd;color:#856404;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:13px;display:block"></div>
 <section class="filters">
   <input id="search" placeholder="Search event, country, city..." />
   <select id="typeFilter"><option value="all">All types</option></select>
@@ -241,11 +240,17 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="modalFoot"><button class="btn danger" id="deleteType" style="display:none">Delete</button><button class="btn primary" id="saveType">Save Type</button></div>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL='https://jsytczubaoexcaktybcw.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzeXRjenViYW9leGNha3R5YmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTE3NDEsImV4cCI6MjA5ODAyNzc0MX0.D8rcGTt0a5fhVq5fHqoyDAUUVYj_kd9o3DxFiAo0zW4';
-const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const H={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
+const api={
+  async get(table,order){const u=SUPABASE_URL+'/rest/v1/'+table+'?select=*'+(order?'&order='+order:'');const r=await fetch(u,{headers:H});return r.json();},
+  async insert(table,data){const r=await fetch(SUPABASE_URL+'/rest/v1/'+table,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});return r;},
+  async update(table,id,data){const r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});return r;},
+  async del(table,id){const r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?id=eq.'+id,{method:'DELETE',headers:H});return r;},
+  async delAll(table){const r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?id=neq.zzzz',{method:'DELETE',headers:H});return r;}
+};
 const ADMIN_PASSWORD='salsation2026';
 
 const seedEvents=[
@@ -284,29 +289,21 @@ function toDbTask(t){return{id:t.id,title:t.title,event_id:t.eventId||null,due:t
 function fromDbTask(r){return{id:r.id,title:r.title,eventId:r.event_id||'',due:r.due||'',status:r.status||'To do',priority:r.priority||'Medium',owner:r.owner||''};}
 
 async function loadData(){
-  const dbg=document.getElementById('dbgMsg');
   try{
-    dbg.textContent='Connecting to database...';
-    const evRes=await db.from('events').select('*');
-    if(evRes.error){dbg.textContent='DB ERROR: '+JSON.stringify(evRes.error);return;}
-    dbg.textContent='Loaded '+( evRes.data?evRes.data.length:0)+' events';
-    events=(evRes.data&&evRes.data.length>0)?evRes.data.map(fromDbEvent):[];
-    const tRes=await db.from('tasks').select('*');
-    tasks=(tRes.data||[]).map(fromDbTask);
-  }catch(e){dbg.textContent='CATCH ERROR: '+e.message;return;}
-
+    const evData=await api.get('events');
+    events=Array.isArray(evData)?evData.map(fromDbEvent):[];
+    const tData=await api.get('tasks');
+    tasks=Array.isArray(tData)?tData.map(fromDbTask):[];
+  }catch(e){console.error('events load',e);}
   try{
-    const etRes=await db.from('event_types').select('*');
-    if(etRes.data&&etRes.data.length>0){eventTypes=etRes.data;}
-    else{await db.from('event_types').insert(seedTypes);eventTypes=[...seedTypes];}
+    const etData=await api.get('event_types');
+    if(Array.isArray(etData)&&etData.length>0){eventTypes=etData;}
+    else{await api.insert('event_types',seedTypes);eventTypes=[...seedTypes];}
   }catch(e){eventTypes=[...seedTypes];}
-
   try{
-    const cRes=await db.from('comments').select('*').order('created_at',{ascending:true});
-    comments=cRes.data||[];
+    const cData=await api.get('comments','created_at');
+    comments=Array.isArray(cData)?cData:[];
   }catch(e){comments=[];}
-
-  dbg.textContent='';
   renderAll();
 }
 
@@ -479,18 +476,18 @@ $('eventForm').addEventListener('submit',async e=>{
   if(!data.end)data.end='';
   if(editingEventId){
     const updated={...events.find(x=>x.id===editingEventId),...data};
-    await db.from('events').update(toDbEvent(updated)).eq('id',editingEventId);
+    await api.update('events',editingEventId,toDbEvent(updated));
     events=events.map(ev=>ev.id===editingEventId?updated:ev);
   }else{
     const nv={id:'e'+Date.now(),...data};
-    await db.from('events').insert(toDbEvent(nv));
+    await api.insert('events',toDbEvent(nv));
     events.push(nv);
   }
   renderAll();
 });
 $('deleteEvent').onclick=async()=>{
   if(editingEventId&&confirm('Delete this event?')){
-    await db.from('events').delete().eq('id',editingEventId);
+    await api.del('events',editingEventId);
     events=events.filter(e=>e.id!==editingEventId);
     tasks=tasks.filter(t=>t.eventId!==editingEventId);
     comments=comments.filter(c=>c.event_id!==editingEventId);
@@ -503,18 +500,18 @@ $('taskForm').addEventListener('submit',async e=>{
   const data=Object.fromEntries(new FormData(e.target).entries());
   if(editingTaskId){
     const updated={...tasks.find(x=>x.id===editingTaskId),...data};
-    await db.from('tasks').update(toDbTask(updated)).eq('id',editingTaskId);
+    await api.update('tasks',editingTaskId,toDbTask(updated));
     tasks=tasks.map(t=>t.id===editingTaskId?updated:t);
   }else{
     const nt={id:'t'+Date.now(),...data};
-    await db.from('tasks').insert(toDbTask(nt));
+    await api.insert('tasks',toDbTask(nt));
     tasks.push(nt);
   }
   renderAll();
 });
 $('deleteTask').onclick=async()=>{
   if(editingTaskId&&confirm('Delete this task?')){
-    await db.from('tasks').delete().eq('id',editingTaskId);
+    await api.del('tasks',editingTaskId);
     tasks=tasks.filter(t=>t.id!==editingTaskId);
     $('taskDialog').close();renderAll();
   }
@@ -527,18 +524,18 @@ $('saveType').onclick=async()=>{
   const color=$('typeColor').value;
   const is_holiday=$('typeIsHoliday').checked;
   if(editingTypeId){
-    await db.from('event_types').update({name,color,is_holiday}).eq('id',editingTypeId);
+    await api.update('event_types',editingTypeId,{name,color,is_holiday});
     eventTypes=eventTypes.map(t=>t.id===editingTypeId?{...t,name,color,is_holiday}:t);
   }else{
     const nt={id:'ty'+Date.now(),name,color,is_holiday};
-    await db.from('event_types').insert(nt);
+    await api.insert('event_types',nt);
     eventTypes.push(nt);
   }
   $('typeDialog').close();renderAll();
 };
 $('deleteType').onclick=async()=>{
   if(editingTypeId&&confirm('Delete this type?')){
-    await db.from('event_types').delete().eq('id',editingTypeId);
+    await api.del('event_types',editingTypeId);
     eventTypes=eventTypes.filter(t=>t.id!==editingTypeId);
     $('typeDialog').close();renderAll();
   }
@@ -550,7 +547,7 @@ $('addComment').onclick=async()=>{
   const body=$('commentText').value.trim();
   if(!body||!editingEventId)return;
   const nc={id:'c'+Date.now(),event_id:editingEventId,author:author||'Anonymous',body,created_at:new Date().toISOString()};
-  await db.from('comments').insert(nc);
+  await api.insert('comments',nc);
   comments.push(nc);
   $('commentText').value='';
   renderComments(editingEventId);
@@ -566,19 +563,6 @@ $('newTask').onclick=()=>openTask();
 $('newType').onclick=()=>openType();
 $('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};
 $('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
-$('resetData').onclick=async()=>{
-  if(confirm('Reset all data to demo events? This cannot be undone.')){
-    await db.from('comments').delete().neq('id','');
-    await db.from('tasks').delete().neq('id','');
-    await db.from('events').delete().neq('id','');
-    await db.from('event_types').delete().neq('id','');
-    await db.from('event_types').insert(seedTypes);
-    await db.from('events').insert(seedEvents.map(toDbEvent));
-    await db.from('tasks').insert(seedTasks.map(toDbTask));
-    events=[...seedEvents];tasks=[...seedTasks];eventTypes=[...seedTypes];comments=[];
-    renderAll();
-  }
-};
 
 loadData();
 </script>
