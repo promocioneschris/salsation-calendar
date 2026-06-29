@@ -135,7 +135,6 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="actions">
     <button class="btn" id="toggleAdmin">Admin Login</button>
     <button class="btn primary" id="newEvent">+ New Event</button>
-    <button class="btn adminOnly" id="resetData">Reset Data</button>
   </div>
 </header>
 
@@ -369,7 +368,7 @@ function renderCalendar(){
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const iso=d.toISOString().slice(0,10);
-    const dayEvents=filtered.filter(e=>e.start===iso);
+    const dayEvents=filtered.filter(e=>{const s=e.start,en=e.end||e.start;return iso>=s&&iso<=en;});
     html+=`<div class="day${d.getMonth()!==m?' muted':''}"><div class="dayNum">${d.getDate()}</div>${dayEvents.map(e=>`<div class="calEvent" style="background:${typeColor(e.type)}" onclick="openEvent('${e.id}')">${e.name}</div>`).join('')}</div>`;
   }
   $('calendar').innerHTML=html;
