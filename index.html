@@ -45,11 +45,16 @@ header{display:flex;justify-content:space-between;gap:18px;align-items:flex-star
 .month h3{margin:0 0 12px;font-size:17px}
 .monthEvent{border-left:4px solid var(--accent);padding:10px 0 10px 12px;margin:8px 0;background:#fff;border-radius:0 12px 12px 0;cursor:pointer;transition:background .15s}
 .monthEvent:hover{background:#f5f2ed}
-.holidayBanner{background:linear-gradient(135deg,#f5eeff,#ede0ff);border:1px solid #d4b8f5;border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;cursor:default}
-.holidayIcon{font-size:22px;flex-shrink:0;line-height:1}
-.holidayLabel{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#7c3aed;margin-bottom:4px}
-.holidayName{font-size:13px;font-weight:700;color:#5b21b6;cursor:pointer;padding:2px 0}
+.holidayBanner{background:#f5eeff;border-left:3px solid #9b59b6;border-radius:0 8px 8px 0;padding:5px 8px;margin-bottom:8px;display:flex;gap:6px;align-items:center}
+.holidayIcon{font-size:13px;flex-shrink:0}
+.holidayName{font-size:12px;font-weight:700;color:#7c3aed;cursor:pointer}
 .holidayName:hover{text-decoration:underline}
+.holidayName span{font-weight:400;color:#9b59b6}
+.currentHolidays{background:linear-gradient(135deg,#7c3aed,#9b59b6);color:white;border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.currentHolidays .chIcon{font-size:24px}
+.currentHolidays .chText{flex:1}
+.currentHolidays .chTitle{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;opacity:.8;margin-bottom:3px}
+.currentHolidays .chNames{font-size:14px;font-weight:700}
 .monthEvent.holiday{background:linear-gradient(to right,#fdf6ff,#fff)}
 .monthEvent strong{display:block;font-size:14px;margin-bottom:4px}
 .monthEvent .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px;align-items:center}
@@ -346,10 +351,29 @@ function renderStats(){const f=getFiltered();$('statEvents').textContent=f.lengt
 
 function renderAnnual(){
   $('annualYearTitle').textContent=annualYear;
-  const filtered=getFiltered().filter(e=>{const d=parseDate(e.start);return d&&d.getFullYear()===annualYear;});
+  const allFiltered=getFiltered().filter(e=>{const d=parseDate(e.start);return d&&d.getFullYear()===annualYear;});
+  const filtered=allFiltered;
   const byMonth=Array.from({length:12},()=>[]);
   filtered.forEach(e=>{const d=parseDate(e.start);if(d)byMonth[d.getMonth()].push(e);});
-  $('months').innerHTML=monthNames.map((m,i)=>{
+
+  // Current month holiday highlight
+  const now=new Date();
+  const curMonth=now.getMonth();
+  const curYear=now.getFullYear();
+  let currentMonthBanner='';
+  if(curYear===annualYear){
+    const curHolidays=byMonth[curMonth].filter(e=>isHoliday(e.type));
+    if(curHolidays.length){
+      currentMonthBanner=`<div class="currentHolidays">
+        <div class="chIcon">🎉</div>
+        <div class="chText">
+          <div class="chTitle">${monthNames[curMonth]} — Holidays this month</div>
+          <div class="chNames">${curHolidays.map(e=>e.name).join(' · ')}</div>
+        </div>
+      </div>`;
+    }
+  }
+  $('months').innerHTML=currentMonthBanner+monthNames.map((m,i)=>{
     const holidays=byMonth[i].filter(e=>isHoliday(e.type));
     const regular=byMonth[i].filter(e=>!isHoliday(e.type));
     const holidayBanner=holidays.length?`
