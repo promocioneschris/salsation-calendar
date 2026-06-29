@@ -195,20 +195,22 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
 <!-- Event dialog -->
 <dialog id="eventDialog">
   <form method="dialog" id="eventForm">
-    <div class="modalHead"><h3 id="eventModalTitle">Event</h3><button class="btn" value="cancel">Close</button></div>
+    <div class="modalHead"><h3 id="eventModalTitle">Event</h3><button type="button" class="btn" id="closeEventDialog">Close</button></div>
     <div class="modalBody"><div class="formGrid">
       <label class="full">Event name<input name="name" required></label>
       <label>Start date<input name="start" type="date" required></label>
       <label>End date<input name="end" type="date"></label>
       <label>Type<select name="type" id="eventTypeSelect"></select></label>
       <label>Country<input name="country"></label>
-      <label>City / Online<input name="city"></label>
+      <label>City<input name="city" id="cityInput"></label>
       <label>Status<select name="status"><option value="confirmed">Confirmed</option><option value="draft">Not confirmed</option></select></label>
       <label>Owner<input name="owner"></label>
+      <div class="checkRow full"><input type="checkbox" id="isOnlineCheck"><label for="isOnlineCheck">🌐 Online event</label></div>
       <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
     </div></div>
     <div class="modalFoot">
       <button type="button" class="btn danger adminOnly" id="deleteEvent" style="display:none">Delete</button>
+      <button type="button" class="btn adminOnly" id="duplicateEvent" style="display:none">Duplicate</button>
       <button class="btn primary" value="save">Save Event</button>
     </div>
   </form>
@@ -352,6 +354,7 @@ function renderAnnual(){
             <span>${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</span>
             ${typeTag(e.type)}
             ${badge(e.status)}
+            ${onlineIcon(e)}
             ${commentCount(e.id)}
           </div>
         </div>`).join(''):'<div class="empty">No events</div>'}
@@ -365,7 +368,7 @@ function renderList(){
       <td><strong>${e.name}</strong><div style="color:var(--muted);font-size:12px;margin-top:2px">${e.notes||''}</div></td>
       <td>${typeTag(e.type)}</td>
       <td style="color:var(--muted)">${[e.city,e.country].filter(Boolean).join(', ')}</td>
-      <td>${badge(e.status)} ${commentCount(e.id)}</td>
+      <td>${badge(e.status)} ${onlineIcon(e)} ${commentCount(e.id)}</td>
       <td class="adminOnly" onclick="event.stopPropagation()"><button class="btn sm" onclick="openEvent('${e.id}')">Edit</button></td>
     </tr>`).join('');
   $('eventTable').innerHTML=rows||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No events found.</td></tr>';
@@ -382,7 +385,7 @@ function renderCalendar(){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const iso=d.toISOString().slice(0,10);
     const dayEvents=filtered.filter(e=>{const s=e.start,en=e.end||e.start;return iso>=s&&iso<=en;});
-    html+=`<div class="day${d.getMonth()!==m?' muted':''}"><div class="dayNum">${d.getDate()}</div>${dayEvents.map(e=>`<div class="calEvent" style="background:${typeColor(e.type)}" onclick="openEvent('${e.id}')">${e.name}</div>`).join('')}</div>`;
+    html+=`<div class="day${d.getMonth()!==m?' muted':''}"><div class="dayNum">${d.getDate()}</div>${dayEvents.map(e=>`<div class="calEvent" style="background:${typeColor(e.type)}" onclick="openEvent('${e.id}')">${isEventOnline(e)?'🌐 ':''}${e.name}</div>`).join('')}</div>`;
   }
   $('calendar').innerHTML=html;
 }
@@ -437,17 +440,36 @@ function renderComments(eventId){
     </div>`).join(''):'<div class="empty" style="font-size:12px;padding:10px">No comments yet. Be the first!</div>';
 }
 
+function isEventOnline(e){return e.city==='Online'||e.country==='Online';}
+function onlineIcon(e){return isEventOnline(e)?'<span title="Online event">🌐</span>':'';}
+
 function openEvent(id){
   editingEventId=id||null;
   const f=$('eventForm');f.reset();
+  $('isOnlineCheck').checked=false;
+  $('cityInput').disabled=false;
   $('deleteEvent').style.display=isAdmin&&id?'inline-block':'none';
+  $('duplicateEvent').style.display=isAdmin&&id?'inline-block':'none';
   $('eventModalTitle').textContent=id?'Edit Event':'New Event';
   populateTypeSelect('');
-  if(id){const e=events.find(x=>x.id===id);if(e){Object.keys(e).forEach(k=>{if(f.elements[k])f.elements[k].value=e[k]||'';});populateTypeSelect(e.type);}}
+  if(id){
+    const e=events.find(x=>x.id===id);
+    if(e){
+      Object.keys(e).forEach(k=>{if(f.elements[k])f.elements[k].value=e[k]||'';});
+      populateTypeSelect(e.type);
+      if(isEventOnline(e)){$('isOnlineCheck').checked=true;$('cityInput').value='Online';$('cityInput').disabled=true;}
+    }
+  }
   renderComments(id||'');
   $('commentText').value='';
   $('eventDialog').showModal();
 }
+
+$('isOnlineCheck').onchange=()=>{
+  if($('isOnlineCheck').checked){$('cityInput').value='Online';$('cityInput').disabled=true;}
+  else{$('cityInput').value='';$('cityInput').disabled=false;}
+};
+$('closeEventDialog').onclick=()=>$('eventDialog').close();
 function openTask(id){
   editingTaskId=id||null;
   const f=$('taskForm');f.reset();
@@ -494,6 +516,17 @@ $('eventForm').addEventListener('submit',async e=>{
   }
   renderAll();
 });
+$('duplicateEvent').onclick=async()=>{
+  if(!editingEventId)return;
+  const src=events.find(x=>x.id===editingEventId);
+  if(!src)return;
+  $('eventDialog').close();
+  const copy={...src,id:'e'+Date.now(),name:'Copy of '+src.name};
+  await api.insert('events',toDbEvent(copy));
+  events.push(copy);
+  renderAll();
+  openEvent(copy.id);
+};
 $('deleteEvent').onclick=async()=>{
   if(editingEventId&&confirm('Delete this event?')){
     await api.del('events',editingEventId);
