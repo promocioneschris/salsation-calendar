@@ -134,6 +134,7 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="title"><h2 id="pageTitle">Year View</h2><p id="pageSubtitle">All events grouped by month.</p></div>
   <div class="actions">
     <button class="btn" id="toggleAdmin">Admin Login</button>
+    <button class="btn" id="voiceBtn" title="Add event by voice">🎙️ Voice</button>
     <button class="btn primary" id="newEvent">+ New Event</button>
   </div>
 </header>
@@ -573,6 +574,96 @@ $('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);ren
 $('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
 $('prevYear').onclick=()=>{annualYear--;renderAnnual();};
 $('nextYear').onclick=()=>{annualYear++;renderAnnual();};
+
+// Voice input
+const MONTHS_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MONTHS_EN=['january','february','march','april','may','june','july','august','september','october','november','december'];
+const NUMBERS_ES={uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciséis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiuno:21,veintidós:22,veintitrés:23,veinticuatro:24,veinticinco:25,veintiséis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,treintayuno:31};
+
+function parseVoiceText(text){
+  const lower=text.toLowerCase().trim();
+  let name=text,start='',end='',city='',country='',type='',notes='';
+
+  // Find month
+  let monthIdx=-1,monthWord='';
+  for(let i=0;i<12;i++){
+    if(lower.includes(MONTHS_ES[i])){monthIdx=i;monthWord=MONTHS_ES[i];break;}
+    if(lower.includes(MONTHS_EN[i])){monthIdx=i;monthWord=MONTHS_EN[i];break;}
+  }
+
+  if(monthIdx>=0){
+    // Find day number (digit or word)
+    let day=1;
+    const digitMatch=lower.match(/(\d{1,2})\s*(y\s*\d{1,2})?\s*(de\s+)?/);
+    if(digitMatch)day=parseInt(digitMatch[1]);
+    else{for(const[w,n]of Object.entries(NUMBERS_ES)){if(lower.includes(w)){day=n;break;}}}
+    const yr=annualYear||2026;
+    start=`${yr}-${String(monthIdx+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    // Remove date from name
+    name=name.replace(new RegExp(`(el\\s+)?(\\d{1,2}|${Object.keys(NUMBERS_ES).join('|')})\\s*(de\\s+)?${monthWord}`,'gi'),'')
+             .replace(new RegExp(monthWord,'gi'),'').trim();
+  }
+
+  // Find location after "en "
+  const locMatch=lower.match(/\ben\s+([a-záéíóúüñ\s,]+?)(\s+el\s+|\s+\d|\s+de\s+|\s*$)/i);
+  if(locMatch){
+    const loc=locMatch[1].trim();
+    city=loc.charAt(0).toUpperCase()+loc.slice(1);
+    name=name.replace(new RegExp('\\ben\\s+'+locMatch[1],'gi'),'').trim();
+  }
+
+  // Find event type
+  const typeMatch=eventTypes.find(t=>lower.includes(t.name.toLowerCase()));
+  if(typeMatch)type=typeMatch.name;
+
+  // Clean name
+  name=name.replace(/^(el|la|un|una|agregar|añadir|nuevo|nueva|evento|add|new|event)\s+/gi,'')
+           .replace(/\s+/g,' ').trim();
+  if(!name)name=text.trim();
+
+  return{name,start,end,city,country,type,notes};
+}
+
+$('voiceBtn').onclick=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Safari.');return;}
+  const rec=new SR();
+  rec.lang='es-ES';
+  rec.interimResults=false;
+  rec.maxAlternatives=3;
+  $('voiceBtn').textContent='🔴 Escuchando...';
+  $('voiceBtn').style.background='#fee';
+  rec.start();
+  rec.onresult=ev=>{
+    const transcript=ev.results[0][0].transcript;
+    const parsed=parseVoiceText(transcript);
+    $('voiceBtn').textContent='🎙️ Voice';
+    $('voiceBtn').style.background='';
+    // Open event form pre-filled
+    editingEventId=null;
+    const f=$('eventForm');f.reset();
+    $('deleteEvent').style.display='none';
+    $('eventModalTitle').textContent='New Event (voice)';
+    populateTypeSelect(parsed.type||'');
+    if(parsed.name)f.elements['name'].value=parsed.name;
+    if(parsed.start)f.elements['start'].value=parsed.start;
+    if(parsed.end)f.elements['end'].value=parsed.end;
+    if(parsed.city)f.elements['city'].value=parsed.city;
+    if(parsed.country)f.elements['country'].value=parsed.country;
+    if(parsed.type)f.elements['type'].value=parsed.type;
+    renderComments('');
+    $('eventDialog').showModal();
+  };
+  rec.onerror=e=>{
+    $('voiceBtn').textContent='🎙️ Voice';
+    $('voiceBtn').style.background='';
+    alert('Error de micrófono: '+e.error);
+  };
+  rec.onend=()=>{
+    $('voiceBtn').textContent='🎙️ Voice';
+    $('voiceBtn').style.background='';
+  };
+};
 
 loadData();
 </script>
