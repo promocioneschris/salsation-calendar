@@ -173,11 +173,13 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
 </section>
 
 <section id="calendarView" class="view hidden card">
+  <div id="calendarBanner"></div>
   <div class="calendarTop"><button class="btn" id="prevMonth">←</button><h3 id="monthTitle"></h3><button class="btn" id="nextMonth">→</button></div>
   <div class="calendarGrid" id="calendar"></div>
 </section>
 
 <section id="listView" class="view hidden card">
+  <div id="listBanner"></div>
   <table class="table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Location</th><th>Status</th><th class="adminOnly">Admin</th></tr></thead><tbody id="eventTable"></tbody></table>
 </section>
 
@@ -327,6 +329,21 @@ async function loadData(){
   renderAll();
 }
 
+function currentMonthHolidayBanner(){
+  const now=new Date();
+  const curHolidays=events.filter(e=>{
+    const d=parseDate(e.start);
+    return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&isHoliday(e.type);
+  });
+  if(!curHolidays.length)return'';
+  return`<div class="currentHolidays" style="margin-bottom:16px">
+    <div class="chIcon">🎉</div>
+    <div class="chText">
+      <div class="chTitle">${monthNames[now.getMonth()]} — Holidays this month</div>
+      ${curHolidays.map(e=>`<div class="chNames">${e.name}</div><div style="font-size:16px;font-weight:900;opacity:.95;margin-top:2px">${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</div>`).join('')}
+    </div>
+  </div>`;
+}
 function typeInfo(name){return eventTypes.find(t=>t.name===name)||{color:'#999',is_holiday:false};}
 function typeColor(name){return typeInfo(name).color;}
 function isHoliday(name){return typeInfo(name).is_holiday;}
@@ -404,6 +421,7 @@ function renderAnnual(){
 }
 
 function renderList(){
+  $('listBanner').innerHTML=currentMonthHolidayBanner();
   const rows=getFiltered().map(e=>`
     <tr onclick="openEvent('${e.id}')">
       <td>${fmt(e.start)}${e.end?' – '+fmt(e.end):''}</td>
@@ -419,6 +437,8 @@ function renderList(){
 function renderCalendar(){
   const y=calendarDate.getFullYear(),m=calendarDate.getMonth();
   $('monthTitle').textContent=`${monthNames[m]} ${y}`;
+  const now=new Date();
+  const calBanner=(y===now.getFullYear()&&m===now.getMonth())?currentMonthHolidayBanner():'';
   const first=new Date(y,m,1),start=new Date(first);
   start.setDate(first.getDate()-((first.getDay()+6)%7));
   let html=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="dayName">${d}</div>`).join('');
@@ -430,6 +450,7 @@ function renderCalendar(){
     html+=`<div class="day${d.getMonth()!==m?' muted':''}"><div class="dayNum">${d.getDate()}</div>${dayEvents.map(e=>`<div class="calEvent" style="background:${typeColor(e.type)}" onclick="openEvent('${e.id}')">${isEventOnline(e)?'🌐 ':''}${e.name}</div>`).join('')}</div>`;
   }
   $('calendar').innerHTML=html;
+  $('calendarBanner').innerHTML=calBanner;
 }
 
 function renderTasks(){
