@@ -145,6 +145,7 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="card stat adminOnly"><div class="num" id="statTasks">0</div><div class="label">Admin tasks</div></div>
 </section>
 
+<div id="dbgMsg" style="background:#fff3cd;color:#856404;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:13px;display:block"></div>
 <section class="filters">
   <input id="search" placeholder="Search event, country, city..." />
   <select id="typeFilter"><option value="all">All types</option></select>
@@ -283,12 +284,16 @@ function toDbTask(t){return{id:t.id,title:t.title,event_id:t.eventId||null,due:t
 function fromDbTask(r){return{id:r.id,title:r.title,eventId:r.event_id||'',due:r.due||'',status:r.status||'To do',priority:r.priority||'Medium',owner:r.owner||''};}
 
 async function loadData(){
+  const dbg=document.getElementById('dbgMsg');
   try{
+    dbg.textContent='Connecting to database...';
     const evRes=await db.from('events').select('*');
-    const tRes=await db.from('tasks').select('*');
+    if(evRes.error){dbg.textContent='DB ERROR: '+JSON.stringify(evRes.error);return;}
+    dbg.textContent='Loaded '+( evRes.data?evRes.data.length:0)+' events';
     events=(evRes.data&&evRes.data.length>0)?evRes.data.map(fromDbEvent):[];
+    const tRes=await db.from('tasks').select('*');
     tasks=(tRes.data||[]).map(fromDbTask);
-  }catch(e){console.error('Events load error',e);}
+  }catch(e){dbg.textContent='CATCH ERROR: '+e.message;return;}
 
   try{
     const etRes=await db.from('event_types').select('*');
@@ -301,6 +306,7 @@ async function loadData(){
     comments=cRes.data||[];
   }catch(e){comments=[];}
 
+  dbg.textContent='';
   renderAll();
 }
 
