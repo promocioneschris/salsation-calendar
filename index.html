@@ -219,7 +219,7 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
       <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
     </div></div>
     <div class="modalFoot">
-      <button type="button" class="btn danger adminOnly" id="deleteEvent" style="display:none">Delete</button>
+      <button type="button" class="btn danger" id="deleteEvent" style="display:none">Delete</button>
       <button type="button" class="btn adminOnly" id="duplicateEvent" style="display:none">Duplicate</button>
       <button class="btn primary" value="save">Save Event</button>
     </div>
@@ -490,7 +490,7 @@ function openEvent(id){
   const f=$('eventForm');f.reset();
   $('isOnlineCheck').checked=false;
   $('cityInput').disabled=false;
-  $('deleteEvent').style.display=isAdmin&&id?'inline-block':'none';
+  $('deleteEvent').style.display=id?'inline-block':'none';
   $('duplicateEvent').style.display=isAdmin&&id?'inline-block':'none';
   $('eventModalTitle').textContent=id?'Edit Event':'New Event';
   populateTypeSelect('');
