@@ -152,7 +152,14 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <select id="countryFilter"><option value="all">All countries</option></select>
 </section>
 
-<section id="annualView" class="view"><div class="months" id="months"></div></section>
+<section id="annualView" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <button class="btn" id="prevYear">←</button>
+    <h3 id="annualYearTitle" style="margin:0;font-size:22px;font-weight:900"></h3>
+    <button class="btn" id="nextYear">→</button>
+  </div>
+  <div class="months" id="months"></div>
+</section>
 
 <section id="calendarView" class="view hidden card">
   <div class="calendarTop"><button class="btn" id="prevMonth">←</button><h3 id="monthTitle"></h3><button class="btn" id="nextMonth">→</button></div>
@@ -279,7 +286,7 @@ const seedTasks=[
 ];
 
 let events=[],tasks=[],eventTypes=[],comments=[];
-let isAdmin=false,currentView='annual',calendarDate=new Date(2026,0,1),editingEventId=null,editingTaskId=null,editingTypeId=null;
+let isAdmin=false,currentView='annual',calendarDate=new Date(2026,0,1),annualYear=2026,editingEventId=null,editingTaskId=null,editingTypeId=null;
 const $=id=>document.getElementById(id);
 const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -330,7 +337,8 @@ function renderFilters(){
 function renderStats(){const f=getFiltered();$('statEvents').textContent=f.length;$('statConfirmed').textContent=f.filter(e=>e.status==='confirmed').length;$('statDraft').textContent=f.filter(e=>e.status==='draft').length;$('statTasks').textContent=tasks.length;}
 
 function renderAnnual(){
-  const filtered=getFiltered();
+  $('annualYearTitle').textContent=annualYear;
+  const filtered=getFiltered().filter(e=>{const d=parseDate(e.start);return d&&d.getFullYear()===annualYear;});
   const byMonth=Array.from({length:12},()=>[]);
   filtered.forEach(e=>{const d=parseDate(e.start);if(d)byMonth[d.getMonth()].push(e);});
   $('months').innerHTML=monthNames.map((m,i)=>`
@@ -563,6 +571,8 @@ $('newTask').onclick=()=>openTask();
 $('newType').onclick=()=>openType();
 $('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};
 $('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();};
+$('prevYear').onclick=()=>{annualYear--;renderAnnual();};
+$('nextYear').onclick=()=>{annualYear++;renderAnnual();};
 
 loadData();
 </script>
