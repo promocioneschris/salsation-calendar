@@ -283,23 +283,24 @@ function toDbTask(t){return{id:t.id,title:t.title,event_id:t.eventId||null,due:t
 function fromDbTask(r){return{id:r.id,title:r.title,eventId:r.event_id||'',due:r.due||'',status:r.status||'To do',priority:r.priority||'Medium',owner:r.owner||''};}
 
 async function loadData(){
-  const[evRes,tRes,etRes,cRes]=await Promise.all([
-    db.from('events').select('*'),
-    db.from('tasks').select('*'),
-    db.from('event_types').select('*'),
-    db.from('comments').select('*').order('created_at',{ascending:true})
-  ]);
-  eventTypes=(etRes.data&&etRes.data.length>0)?etRes.data:[...seedTypes];
-  if(!etRes.data||etRes.data.length===0)await db.from('event_types').insert(seedTypes);
-  if(!evRes.data||evRes.data.length===0){
-    await db.from('events').insert(seedEvents.map(toDbEvent));
-    await db.from('tasks').insert(seedTasks.map(toDbTask));
-    events=[...seedEvents];tasks=[...seedTasks];
-  }else{
-    events=evRes.data.map(fromDbEvent);
+  try{
+    const evRes=await db.from('events').select('*');
+    const tRes=await db.from('tasks').select('*');
+    events=(evRes.data&&evRes.data.length>0)?evRes.data.map(fromDbEvent):[];
     tasks=(tRes.data||[]).map(fromDbTask);
-  }
-  comments=cRes.data||[];
+  }catch(e){console.error('Events load error',e);}
+
+  try{
+    const etRes=await db.from('event_types').select('*');
+    if(etRes.data&&etRes.data.length>0){eventTypes=etRes.data;}
+    else{await db.from('event_types').insert(seedTypes);eventTypes=[...seedTypes];}
+  }catch(e){eventTypes=[...seedTypes];}
+
+  try{
+    const cRes=await db.from('comments').select('*').order('created_at',{ascending:true});
+    comments=cRes.data||[];
+  }catch(e){comments=[];}
+
   renderAll();
 }
 
