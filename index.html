@@ -568,24 +568,23 @@ $('submitLogin').onclick=()=>{
 $('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('submitLogin').click();});
 
 // Event form
-$('saveEvent').onclick=()=>{
+$('saveEvent').onclick=async()=>{
+  if(!isAdmin)return;
   const f=$('eventForm');
   if(!f.checkValidity()){f.reportValidity();return;}
   const formData=Object.fromEntries(new FormData(f).entries());
   if(!formData.end)formData.end='';
-  requireTeamAccess(async()=>{
-    if(editingEventId){
-      const updated={...events.find(x=>x.id===editingEventId),...formData};
-      await api.update('events',editingEventId,toDbEvent(updated));
-      events=events.map(ev=>ev.id===editingEventId?updated:ev);
-    }else{
-      const nv={id:'e'+Date.now(),...formData};
-      await api.insert('events',toDbEvent(nv));
-      events.push(nv);
-    }
-    $('eventDialog').close();
-    renderAll();
-  });
+  if(editingEventId){
+    const updated={...events.find(x=>x.id===editingEventId),...formData};
+    await api.update('events',editingEventId,toDbEvent(updated));
+    events=events.map(ev=>ev.id===editingEventId?updated:ev);
+  }else{
+    const nv={id:'e'+Date.now(),...formData};
+    await api.insert('events',toDbEvent(nv));
+    events.push(nv);
+  }
+  $('eventDialog').close();
+  renderAll();
 };
 $('duplicateEvent').onclick=async()=>{
   if(!editingEventId)return;
