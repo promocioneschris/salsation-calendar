@@ -220,7 +220,7 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
 
 <!-- Event dialog -->
 <dialog id="eventDialog">
-  <form method="dialog" id="eventForm">
+  <form id="eventForm">
     <div class="modalHead"><h3 id="eventModalTitle">Event</h3><button type="button" class="btn" id="closeEventDialog">Close</button></div>
     <div class="modalBody"><div class="formGrid">
       <label class="full">Event name<input name="name" required></label>
@@ -237,7 +237,7 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
     <div class="modalFoot">
       <button type="button" class="btn danger" id="deleteEvent" style="display:none">Delete</button>
       <button type="button" class="btn adminOnly" id="duplicateEvent" style="display:none">Duplicate</button>
-      <button class="btn primary" value="save">Save Event</button>
+      <button type="button" class="btn primary" id="saveEvent">Save Event</button>
     </div>
   </form>
   <div class="commentsSection">
@@ -599,10 +599,12 @@ $('submitLogin').onclick=()=>{
 $('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('submitLogin').click();});
 
 // Event form
-$('eventForm').addEventListener('submit',async e=>{
-  const formData=Object.fromEntries(new FormData(e.target).entries());
+$('saveEvent').onclick=()=>{
+  const f=$('eventForm');
+  if(!f.checkValidity()){f.reportValidity();return;}
+  const formData=Object.fromEntries(new FormData(f).entries());
   if(!formData.end)formData.end='';
-  const doSave=async()=>{
+  requireTeamAccess(async()=>{
     if(editingEventId){
       const updated={...events.find(x=>x.id===editingEventId),...formData};
       await api.update('events',editingEventId,toDbEvent(updated));
@@ -612,10 +614,10 @@ $('eventForm').addEventListener('submit',async e=>{
       await api.insert('events',toDbEvent(nv));
       events.push(nv);
     }
+    $('eventDialog').close();
     renderAll();
-  };
-  requireTeamAccess(doSave);
-});
+  });
+};
 $('duplicateEvent').onclick=async()=>{
   if(!editingEventId)return;
   const src=events.find(x=>x.id===editingEventId);
