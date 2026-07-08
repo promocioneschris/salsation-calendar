@@ -144,8 +144,8 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
   <div class="title"><h2 id="pageTitle">Year View</h2><p id="pageSubtitle">All events grouped by month.</p></div>
   <div class="actions">
     <button class="btn" id="toggleAdmin">Admin Login</button>
-    <button class="btn" id="voiceBtn" title="Add event by voice">🎙️ Voice</button>
-    <button class="btn primary" id="newEvent">+ New Event</button>
+    <button class="btn adminOnly" id="voiceBtn" title="Add event by voice">🎙️ Voice</button>
+    <button class="btn primary adminOnly" id="newEvent">+ New Event</button>
   </div>
 </header>
 
@@ -194,20 +194,6 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
 </main>
 </div>
 
-<!-- Team access -->
-<dialog id="teamDialog">
-  <div class="modalHead"><h3>🔐 Team Access</h3></div>
-  <div class="modalBody"><div class="formGrid">
-    <p style="grid-column:1/-1;font-size:14px;color:var(--muted);margin:0 0 8px">Enter the team password to create or modify events.</p>
-    <label class="full">Password<input type="password" id="teamPassword" placeholder="Team password"></label>
-    <p id="teamError" style="color:var(--red);font-size:13px;margin:4px 0 0;display:none">Incorrect password.</p>
-  </div></div>
-  <div class="modalFoot">
-    <button class="btn" id="cancelTeam">Cancel</button>
-    <button class="btn primary" id="submitTeam">Access</button>
-  </div>
-</dialog>
-
 <!-- Admin login -->
 <dialog id="loginDialog">
   <div class="modalHead"><h3>Admin Login</h3><button class="btn" id="closeLogin">Close</button></div>
@@ -235,9 +221,9 @@ input[type="color"]{padding:4px 6px;height:42px;cursor:pointer;border-radius:8px
       <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
     </div></div>
     <div class="modalFoot">
-      <button type="button" class="btn danger" id="deleteEvent" style="display:none">Delete</button>
+      <button type="button" class="btn danger adminOnly" id="deleteEvent" style="display:none">Delete</button>
       <button type="button" class="btn adminOnly" id="duplicateEvent" style="display:none">Duplicate</button>
-      <button type="button" class="btn primary" id="saveEvent">Save Event</button>
+      <button type="button" class="btn primary adminOnly" id="saveEvent">Save Event</button>
     </div>
   </form>
   <div class="commentsSection">
@@ -288,15 +274,6 @@ const api={
   async delAll(table){const r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?id=neq.zzzz',{method:'DELETE',headers:H});return r;}
 };
 const ADMIN_PASSWORD='salsation2026';
-const TEAM_PASSWORD='salsation2026';
-let teamAccessCallback=null;
-function hasTeamAccess(){return isAdmin||localStorage.getItem('teamAccess')==='1';}
-function requireTeamAccess(fn){
-  if(hasTeamAccess()){fn();return;}
-  teamAccessCallback=fn;
-  $('teamPassword').value='';$('teamError').style.display='none';
-  $('teamDialog').showModal();
-}
 
 const seedEvents=[
   {id:'e1',name:'Poland – Inicio de actividad',start:'2026-01-03',end:'',type:'Community',country:'Poland',city:'',status:'confirmed',owner:'',notes:'Inicio de actividad en Polonia'},
@@ -534,10 +511,13 @@ function openEvent(id){
   const f=$('eventForm');f.reset();
   $('isOnlineCheck').checked=false;
   $('cityInput').disabled=false;
-  $('deleteEvent').style.display=id?'inline-block':'none';
+  $('deleteEvent').style.display=isAdmin&&id?'inline-block':'none';
   $('duplicateEvent').style.display=isAdmin&&id?'inline-block':'none';
-  $('eventModalTitle').textContent=id?'Edit Event':'New Event';
+  $('eventModalTitle').textContent=id?(isAdmin?'Edit Event':'View Event'):'New Event';
   populateTypeSelect('');
+  // Make fields readonly for non-admins
+  Array.from(f.elements).forEach(el=>{el.disabled=!isAdmin;});
+  $('isOnlineCheck').disabled=!isAdmin;
   if(id){
     const e=events.find(x=>x.id===id);
     if(e){
@@ -574,17 +554,6 @@ function openType(id){
   $('typeDialog').showModal();
 }
 window.openEvent=openEvent;window.openTask=openTask;window.openType=openType;
-
-// Team access dialog
-$('cancelTeam').onclick=()=>{$('teamDialog').close();teamAccessCallback=null;};
-$('submitTeam').onclick=()=>{
-  if($('teamPassword').value===TEAM_PASSWORD){
-    localStorage.setItem('teamAccess','1');
-    $('teamDialog').close();
-    if(teamAccessCallback){teamAccessCallback();teamAccessCallback=null;}
-  }else{$('teamError').style.display='block';}
-};
-$('teamPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('submitTeam').click();});
 
 // Admin login
 $('toggleAdmin').onclick=()=>{
@@ -629,17 +598,14 @@ $('duplicateEvent').onclick=async()=>{
   renderAll();
   openEvent(copy.id);
 };
-$('deleteEvent').onclick=()=>{
-  if(!editingEventId)return;
-  requireTeamAccess(async()=>{
-    if(confirm('Delete this event?')){
-      await api.del('events',editingEventId);
-      events=events.filter(e=>e.id!==editingEventId);
-      tasks=tasks.filter(t=>t.eventId!==editingEventId);
-      comments=comments.filter(c=>c.event_id!==editingEventId);
-      $('eventDialog').close();renderAll();
-    }
-  });
+$('deleteEvent').onclick=async()=>{
+  if(editingEventId&&confirm('Delete this event?')){
+    await api.del('events',editingEventId);
+    events=events.filter(e=>e.id!==editingEventId);
+    tasks=tasks.filter(t=>t.eventId!==editingEventId);
+    comments=comments.filter(c=>c.event_id!==editingEventId);
+    $('eventDialog').close();renderAll();
+  }
 };
 
 // Task form
@@ -705,7 +671,7 @@ $('commentText').addEventListener('keydown',e=>{if(e.key==='Enter')$('addComment
 // Nav & filters
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 ['search','typeFilter','statusFilter','countryFilter'].forEach(id=>$(id).addEventListener('input',renderAll));
-$('newEvent').onclick=()=>requireTeamAccess(()=>openEvent());
+$('newEvent').onclick=()=>openEvent();
 $('newTask').onclick=()=>openTask();
 $('newType').onclick=()=>openType();
 $('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();};
@@ -762,7 +728,7 @@ function parseVoiceText(text){
   return{name,start,end,city,country,type,notes};
 }
 
-$('voiceBtn').onclick=()=>requireTeamAccess(()=>startVoice());
+$('voiceBtn').onclick=()=>startVoice();
 function startVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Safari.');return;}
